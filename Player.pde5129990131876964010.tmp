@@ -1,0 +1,52 @@
+class Player extends GraphicObject
+{
+  
+  float topSpeed = 3;
+  float topSteer = 0.05;
+  
+  float mass = 1;
+  
+  float theta = 0;
+  float r = 10; // Rayon du boid
+  
+  Cercle box;
+  
+  Player()
+  {
+    
+    location = new PVector(width/2, height/2);
+    velocity = new PVector(0, 0);
+    acceleration = new PVector(0, 0);
+    box = new Cercle(10, location.x, location.y);
+  }
+  
+  
+  void update(float deltaTime)
+  {
+    
+  }
+  
+  
+  void display()
+  {
+    noStroke();
+    fill (fillColor);
+    
+    pushMatrix();
+    translate(location.x, location.y);
+    rotate (theta);
+    
+    beginShape(TRIANGLES);
+      vertex(0, -r * 2);
+      vertex(-r, r * 2);
+      vertex(r, r * 2);
+    
+    endShape();
+    
+    popMatrix();
+    
+    box.display();
+  }
+  
+  
+}
