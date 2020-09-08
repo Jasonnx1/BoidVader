@@ -5,22 +5,18 @@ class Boid extends GraphicObject {
   float mass = 1;
   
   float theta = 0;
-  float r = 10; // Rayon du boid
+  float radius = 30; // Rayon du boid
   
-  float radiusSeparation = 10 * r;
-  float radiusAlignment = 20 * r;
-  float radiusCohesion = 30 * r;
+  float radiusSeparation = 30 * radius;
+  float radiusAlignment = 30 * radius;
+  float radiusCohesion = 30 * radius;
 
-  float weightSeparation = 1.9;
-  float weightAlignment = 2;
+  float weightSeparation = 2;
+  float weightAlignment = 1;
   float weightCohesion = 1;
   
   boolean touched = false;
-  
 
-  
-  
-  Cercle box;
   
   PVector steer;
   PVector sumAlignment;
@@ -34,35 +30,37 @@ class Boid extends GraphicObject {
   String debugMessage = "";
   
   Boid () {
-    location = new PVector();
-    velocity = new PVector();
-    acceleration = new PVector();
-    box = new Cercle(16, location.x, location.y);
+    location = new PVector(random(width),random(height));
+    velocity = new PVector(1,1);
+    acceleration = new PVector(0,0);
 
     
   }
+  
   
   Boid (PVector loc, PVector vel) {
     this.location = loc;
     this.velocity = vel;
     this.acceleration = new PVector (0 , 0);
-    box = new Cercle(16, location.x, location.y);
+
 
     
   }
   
   void checkEdges() {
-    if (location.x < 0) {
-      location.x = width - r;
-    } else if (location.x + r> width) {
-      location.x = 0;
+    
+     if (location.x + radius/2 < 0) {
+      location.x = width + radius/2 ;
+    } else if (location.x - radius/2> width) {
+      location.x = 0 - radius/2;
     }
     
-    if (location.y < 0) {
-      location.y = height - r;
-    } else if (location.y + r> height) {
-      location.y = 0;
+    if (location.y + radius/2 < 0) {
+      location.y = height + radius/2;
+    } else if (location.y - radius/2 > height) {
+      location.y = 0 - radius/2;
     }
+    
   }
 
   void flock (ArrayList<Boid> boids) {
@@ -91,9 +89,7 @@ class Boid extends GraphicObject {
     location.add (velocity);
 
     acceleration.mult (0);      
-    
-    box.location.x = location.x;
-    box.location.y = location.y;
+
     
   }
   
@@ -102,15 +98,20 @@ class Boid extends GraphicObject {
     fill(fillColor);
     
     pushMatrix();
+    stroke(255,0,0);
+    strokeWeight(2);
+    
     translate(location.x, location.y);
-    rotate (theta);
+    rotate (theta + PI + HALF_PI);
     
-    beginShape(TRIANGLES);
-      vertex(0, -r * 2);
-      vertex(-r, r * 2);
-      vertex(r, r * 2);
     
-    endShape();
+    line(radius/2, 0, -radius*0.4, -radius/3);
+    line(-radius*0.4, -radius/3, -radius/10 ,0);
+    line(-radius/10, 0, -radius*0.4, radius/3);
+    line(-radius*0.4, radius/3, radius/2, 0);
+    
+    // fill(255,0,0,100);
+    // ellipse(0,0,radius,radius);
     
     popMatrix();
 

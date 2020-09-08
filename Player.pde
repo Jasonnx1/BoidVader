@@ -5,178 +5,278 @@ class Player extends GraphicObject
   float power = 0.3;
   float topSteer = 0.1;
   
-  float mass = 1;
-  
   float theta = 0;
-  float r = 10; // Rayon du boid
+  float radius = 40; // Rayon du boid
   
-  float cooldown;
+  int score = 0;
+  float hitCooldown = 0.0;
+ 
+
+  int health = 100;
   
-  ArrayList<Laser> lasers;
-  
-  boolean gameOver = false;
-  boolean win = false;
+  public boolean keyForward, keyLeft, keyRight;
   
   int shootingPower = 10;
   
-  Cercle box;
+  
   
   Player(float x, float y)
   {    
     location = new PVector(x, y);
     velocity = new PVector(0, 0);
     acceleration = new PVector(0, 0);
-    box = new Cercle(14, location.x, location.y);
-    cooldown = 0;
-    lasers = new ArrayList<Laser>();
+    
+    keyForward = false;
+    keyRight = false;
+    keyLeft = false;
+    
+
+
   }
   
-  ArrayList<Laser> getLasers()
-  {
-   return lasers; 
-  }
+
  
    void applyForce (PVector force) {
-    PVector f;
+     
+    this.acceleration.add(force);
     
-    if (mass != 1)
-      f = PVector.div (force, mass);
-    else
-      f = force;
-   
-    this.acceleration.add(f);    
+  }
+  
+  void checkEdges()
+  {
+    
+    if (location.x + radius/2 < 0) {
+      location.x = width + radius/2 ;
+    } else if (location.x - radius/2> width) {
+      location.x = 0 - radius/2;
+    }
+    
+    if (location.y + radius/2 < 0) {
+      location.y = height + radius/2;
+    } else if (location.y - radius/2 > height) {
+      location.y = 0 - radius/2;
+    }
+    
+    
+    
   }
   
   void update(float deltaTime)
   {
     
-    for(int i = 0; i < lasers.size(); i++)
-    {
-      if( lasers.get(i).checkOut() )
-      {
-        lasers.remove(i);
-      }
-    }
-    
-    cooldown += deltaTime;
+       checkEdges();
 
-    
-    if (location.x < 0) {
-      location.x = width - r;
-    } else if (location.x + r> width) {
-      location.x = 0;
-    }
-    
-    if (location.y < 0) {
-      location.y = height - r;
-    } else if (location.y + r> height) {
-      location.y = 0;
-    }
-    
-    
-    if(keyPressed)
-    {
-     switch(key)
-     {
+       if(hitCooldown == 0)
+       {
+           if(keyForward)
+           {
+             applyForce(new PVector( (power * cos( theta - radians(90) ) ) , (power * sin( theta - radians(90) ) ) ) );
+           }
+           else
+           {
+             if( (velocity.x > 0.001 || velocity.y > 0.001) || (velocity.x < -0.001 || velocity.y < -0.001) )
+             {
+               applyForce(new PVector(-velocity.x/40, -velocity.y/40) );
+             }
+             else
+             {
+               velocity.x = 0;
+               velocity.y = 0;
+             }
+           }
+           
+           if(keyLeft)
+           {
+             theta -= 0.07;
+           }
+           
+           if(keyRight)
+           {
+             theta += 0.07;
+           }
+           
+           if(keyForward && keyRight && keyLeft)
+           {
+            
+             score = 0;
+             
+           }
+           else if(keyForward &&  keyRight)
+           {
+             
+             score++;
+             
+           }
+           else if (keyForward && keyLeft)
+           {
+             
+             score++;
+             
+           }
+           else 
+           {
+            score = 0; 
+           }  
+         
+       }
        
-      case 'w': applyForce(new PVector( (power * cos( theta - radians(90) ) ) , (power * sin( theta - radians(90) ) ) ) );
-      break;
-      
-      case 'a': theta -= 0.07;
-      break;
-      
-      case 'd': theta += 0.07;
-      break;
-      
-      case ' ': if(cooldown > 100 && lasers.size() < 5) { 
-                  shoot(new PVector( (shootingPower * cos( theta - radians(90) ) ) , (shootingPower * sin( theta - radians(90) ) ) ), location);
-                  cooldown = 0;
-                }
-      break;
-      
-      
-     }
-    }
+       
     
-    for(Laser l : lasers)
-    {
-      l.update(deltaTime); 
-    }
+      
+      
+  
+    
+    
     
     velocity.add (acceleration);
     velocity.limit(topSpeed);
     location.add (velocity);
     acceleration.mult (0);      
+
     
-    box.location.x = location.x;
-    box.location.y = location.y;
+    
        
   }
   
-  void shoot(PVector dir, PVector loc)
+  void checkCollision(ArrayList<Boid> boids)
   {
-    
-    lasers.add( new Laser(new PVector(dir.x, dir.y) , new PVector(loc.x, loc.y) ) );
-    
-  }
-  
-  void collision(Boid b)
-  {
-    
-    if(PVector.dist(location, b.location) < box.rayon + b.box.rayon )
-    {
-      gameOver = true;
-    }
-    
-  }
-  
-  void display()
-  {
-    if(win)
-    {
-      textSize(100);
-      fill(0,255,0);
-      text("You Win !", width/2 - 270, height/2);
-      textSize(50);
-      text("Press R to reset", width/2 - 200, height/2 + 100);
-    }
-    else if(gameOver)
+   
+    for(Boid b : boids)
     {
       
-      textSize(100);
-      fill(255,0,0);
-      text("Game Over", width/2 - 270, height/2);
-      textSize(50);
-      text("Press R to reset", width/2 - 200, height/2 + 100);
+       if(PVector.dist(b.location, location) < b.radius/2 + radius/2 )
+       {
+         
+         if(hitCooldown == 0)
+         {
+           health -= 10;
+           hitCooldown = 700;
+           shakeTimer = 0.15;
+         }
+         
+       }
+      
+    }
+    
+  }
+  
+
+  
+  void display(float deltatime)
+  {
+    
+    if(hitCooldown != 0)
+    {
+      
+      hitCooldown -= deltatime;
+      
+      if(hitCooldown < 0)
+      {
+         hitCooldown = 0; 
+      }
+      
+      if(hitCooldown < 200)
+      {
+        
+        stroke(200);
+        
+      }
+      else if(hitCooldown < 400)
+      {
+        
+        stroke(100);
+        
+      }
+      else if(hitCooldown < 600)
+      {
+        
+        stroke(200);
+        
+      }
+      else if(hitCooldown < 800)
+      {
+        
+        stroke(100);
+        
+      }
+      else
+      {
+       
+        stroke(200);
+        
+      }
+      
       
     }
     else
     {
+      stroke(60, 247, 255);
+    }
+
+    pushMatrix();
     
-    for(Laser l : lasers)
+    strokeWeight(2);
+    
+    translate(location.x, location.y);
+    rotate (theta + PI + HALF_PI);
+  
+    line(radius/2, 0, -radius*0.4, -radius/3);
+    line(-radius*0.4, -radius/3, -radius/10 ,0);
+    line(-radius/10, 0, -radius*0.4, radius/3);
+    line(-radius*0.4, radius/3, radius/2, 0);
+    
+    if(keyForward && hitCooldown == 0)
     {
-      l.display(); 
+      stroke(255,0,0);
+      
+      line(-radius/4, -radius/8, -radius/2, 0);
+      line(-radius/2 ,0 , -radius/4, radius/8);
+     
     }
     
-    noStroke();
-    fill(fillColor);
-    
-    pushMatrix();
-    translate(location.x, location.y);
-    rotate (theta);
-    
-    beginShape(TRIANGLES);
-      vertex(0, -r * 2);
-      vertex(-r, r * 2);
-      vertex(r, r * 2);
-    
-    endShape();
-    
+  //  fill(255,0,0,100);
+  //  ellipse(0,0,radius,radius);
     
     popMatrix();
     
+
+    
+
+      
+    
+  }
+  
+  void keyPressed(char c)
+  {
+    
+    switch(c)
+    {
+      case 'w': keyForward = true;
+      break;
+      case 'd': keyRight = true;
+      break;
+      case 'a': keyLeft = true;
+      
     }
   }
+  
+  void keyReleased(char c)
+  {
+    
+        switch(c)
+    {
+      case 'w': keyForward = false;
+      break;
+      case 'd': keyRight = false;
+      break;
+      case 'a': keyLeft = false;
+      
+    }
+  }
+  
+  void display(){}
+    
+  
   
   
 }

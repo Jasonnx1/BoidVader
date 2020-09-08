@@ -1,42 +1,44 @@
 int previousTime;
 int deltaTime;
 int currentTime;
-ArrayList<Boid> ennemies;
-int Nennemies = 50;
+
 Player player;
-PImage bg;
+
 boolean target = false;
 PVector pos;
-int score = 0;
+
+int nEnnemies = 10;
+ArrayList<Boid> ennemies;
+
+float shakeTimer = 0.0;
+float shakeAmount = 0.0;
+
+ float iniWidth = 1080; 
+float iniHeight = 720;
 
 void setup()
 {
-  fullScreen(P2D);
+  
+  size(1080, 720, P2D);
   currentTime = millis();
   previousTime = millis();
-  ennemies = new ArrayList<Boid>();
   player = new Player(width/2, height/2);
-  score = 0;
+  player.score = 0;
+
+
+  ennemies = new ArrayList<Boid>();
   
-  do
+  for(int i = 0; i < nEnnemies; i++)
   {
-   pos = new PVector(random(0, width), random(0, height ) );
+    ennemies.add(new Boid());
   }
-  while( PVector.dist(pos, player.location) < height/3 );
-  
-  for (int i = 0; i < Nennemies; i++) {
-    Boid b = new Boid(new PVector(pos.x, pos.y), new PVector(random (-2, 2), random(-2, 2)));
-    b.fillColor = color(#CFE5F7);
-    ennemies.add(b);
-    
-  }
-  
-  bg = loadImage("Images/space.jpg");
-  bg.resize(width, height);
   
   
   player.fillColor = color(#3D00F7);
   
+  surface.setResizable(true);
+
+
 }
 
 
@@ -46,9 +48,11 @@ void draw()
   deltaTime = currentTime - previousTime;
  
   update(deltaTime);
-  display();
+  display(deltaTime);
   
   previousTime = currentTime;
+  
+
 }
 
 
@@ -56,80 +60,89 @@ void draw()
 void update(int deltatime)
 {
   
+  
+  
   player.update(deltatime);
   
   for(Boid b : ennemies)
   {
-      b.flock(ennemies);
-      b.update(deltatime);
+   b.flock(ennemies); 
   }
   
-  for (int i = ennemies.size() - 1; i >= 0; i--) {
- 
-   if(PVector.dist(player.location, ennemies.get(i).location) < 40 )
-    player.collision ( ennemies.get(i) );
- 
-   for(int j = player.lasers.size() - 1; j >= 0; j-- )
-   {
-     
-     if(PVector.dist(player.lasers.get(j).location, ennemies.get(i).location) < 40  )
-     {
-         if(player.lasers.get(j).checkCollision(ennemies.get(i)) )
-          {
-            
-            target = true;
-            player.lasers.remove(j);
-                
-          }
-     } 
-   }
-   
-   if(target == true)
-   {
-   ennemies.remove(i);
-   score++;
-   }
-   
-   if(ennemies.size() == 0)
-   {
-    player.win = true; 
-   }
-   
-   target = false;
-
-    
+  for(Boid b : ennemies)
+  {
+   b.update(deltatime); 
   }
+  
+  player.checkCollision(ennemies);
+  
+      
+  
   
   
   
 }
 
-void display()
-
+void display(float deltatime)
 {
+  
+ 
 
 
-  background(bg);
+  background(0);
+  scale(width/iniWidth, height/iniHeight);
   
   textSize(20);
-  fill(0,255,0);
-  text("Score: " + score,10,20);
+  fill(255);
+  text("Health: " + player.health,10,20);
   
-  fill(0,255,0);
-  text("Ennemies: " + ennemies.size(),10,40);
   
-    player.display();
+  player.display(deltatime);
+  
   
   for(Boid b : ennemies)
   {
+     b.display(); 
+  }
+  
+  if(shakeTimer > 0)
+  {
     
-    b.display();
+    
+    
+
+     shakeAmount = random(-10,10); 
+    
+    
+    PImage screenImage = get();
+    imageMode(CORNER);
+    image(screenImage, shakeAmount, shakeAmount);
+    
+    shakeTimer -= 1/30.0;
     
   }
+ 
+  
+
+
   
 }
 
 void keyPressed()
 {
- if(key == 'r') setup(); 
+ switch(key)
+ {
+  case 'r': setup();
+  break;
+  
+  default: player.keyPressed(key);
+  break;
+ }
+ 
+}
+
+void keyReleased(){
+ 
+  player.keyReleased(key);
+  
 }
